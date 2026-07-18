@@ -1,24 +1,58 @@
 const http = require('http');
 const httpProxy = require('http-proxy');
-const { logMetric } = require('./db');
+const { logMetric, logClientEvent } = require('./db');
+const { injectRumScript } = require('./injector');
 
 function startProxy({ proxyPort, targetPort, commitHash }) {
-  // A forwarder aimed at your real app
   const proxy = httpProxy.createProxyServer({
     target: `http://localhost:${targetPort}`,
+    selfHandleResponse: true, // we handle the response so we can inject the RUM script
   });
 
-  // If the app is unreachable, respond gracefully instead of crashing
   proxy.on('error', (err, req, res) => {
     res.writeHead(502, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'WPD proxy: target app not reachable' }));
   });
 
-  // Our own server that wraps the proxy so we can time every request
-  const server = http.createServer((req, res) => {
-    const start = Date.now();
+  // Buffer the app's response; inject RUM into HTML, pass everything else through
+  proxy.on('proxyRes', (proxyRes, req, res) => {
+    const contentType = proxyRes.headers['content-type'] || '';
+    const chunks = [];
+    proxyRes.on('data', (c) => chunks.push(c));
+    proxyRes.on('end', () => {
+      let body = Buffer.concat(chunks);
+      const headers = { ...proxyRes.headers };
 
-    // Fires when the response has been fully sent back to the client
+      if (contentType.includes('text/html')) {
+        const html = injectRumScript(body.toString());
+        body = Buffer.from(html);
+        headers['content-length'] = Buffer.byteLength(body); // body grew, fix the length
+      }
+
+      res.writeHead(proxyRes.statusCode, headers);
+      res.end(body);
+    });
+  });
+
+  const server = http.createServer((req, res) => {
+    // Intercept RUM data — store it locally, don't forward to the app
+    if (req.method === 'POST' && req.url === '/__wpd/collect') {
+      let body = '';
+      req.on('data', (chunk) => (body += chunk));
+      req.on('end', () => {
+        try {
+          const { events } = JSON.parse(body);
+          events.forEach((e) => logClientEvent(e, commitHash));
+        } catch (err) {
+          // ignore malformed payloads
+        }
+        res.writeHead(204);
+        res.end();
+      });
+      return;
+    }
+
+    const start = Date.now();
     res.on('finish', () => {
       const duration = Date.now() - start;
       logMetric({
@@ -32,7 +66,6 @@ function startProxy({ proxyPort, targetPort, commitHash }) {
       console.log(`${req.method} ${req.url} -> ${res.statusCode} (${duration}ms)`);
     });
 
-    // Hand the request off to the real app
     proxy.web(req, res);
   });
 
@@ -40,6 +73,5 @@ function startProxy({ proxyPort, targetPort, commitHash }) {
     console.log(`WPD proxy on http://localhost:${proxyPort} -> forwarding to :${targetPort}`);
   });
 }
-
 
 module.exports = { startProxy };

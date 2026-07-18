@@ -13,11 +13,14 @@ const db = new DatabaseSync(path.join(wpdDir, 'metrics.db'));
 
 // Define the table for API request logs (runs safely every launch)
 db.exec(`
-  CREATE TABLE IF NOT EXISTS api_metrics (
+  CREATE TABLE IF NOT EXISTS client_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    method TEXT,
+    type TEXT,
     path TEXT,
+    url TEXT,
     status INTEGER,
+    fcp REAL,
+    load_time REAL,
     duration_ms REAL,
     commit_hash TEXT,
     timestamp TEXT
@@ -40,4 +43,29 @@ function getRecentMetrics() {
   return recentStmt.all();
 }
 
-module.exports = { logMetric, getRecentMetrics };
+const insertClientStmt = db.prepare(`
+  INSERT INTO client_events (type, path, url, status, fcp, load_time, duration_ms, commit_hash, timestamp)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const recentClientStmt = db.prepare(`SELECT * FROM client_events ORDER BY id DESC LIMIT 20`);
+
+function logClientEvent(e, commitHash) {
+  insertClientStmt.run(
+    e.type ?? null,
+    e.path ?? null,
+    e.url ?? null,
+    e.status ?? null,
+    e.fcp ?? null,
+    e.loadTime ?? null,
+    e.duration_ms ?? null,
+    commitHash,
+    e.timestamp ?? new Date().toISOString()
+  );
+}
+
+function getRecentClientEvents() {
+  return recentClientStmt.all();
+}
+
+module.exports = { logMetric, getRecentMetrics, logClientEvent, getRecentClientEvents };

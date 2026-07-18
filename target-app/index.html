@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Target App</title>
+</head>
+<body>
+  <h1>Target App</h1>
+  <p>This page makes API calls that WPD's RUM script watches. Open DevTools console.</p>
+  <script>
+    fetch('/api/users').then(r => r.json()).then(d => console.log('users', d));
+    fetch('/api/report').then(r => r.json()).then(d => console.log('report', d));
+    fetch('/api/missing').then(r => console.log('missing status', r.status)); // 404 → RUM logs it
+  </script>
+</body>
+</html>

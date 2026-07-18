@@ -41,8 +41,11 @@ program
   .command('stats')
   .description('Show recently logged requests')
   .action(() => {
-    const { getRecentMetrics } = require('../src/db');
+    const { getRecentMetrics, getRecentClientEvents } = require('../src/db');
+    console.log('\n=== API metrics (server-side) ===');
     console.table(getRecentMetrics());
+    console.log('\n=== Client events (browser RUM) ===');
+    console.table(getRecentClientEvents());
   });
 
 program.parse();
