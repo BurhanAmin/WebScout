@@ -1,0 +1,11 @@
+{
+  "name": "wpd-cli",
+  "version": "1.0.0",
+  "bin": {
+    "wpd": "./bin/wpd.js"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "http-proxy": "^1.18.1"
+  }
+}
