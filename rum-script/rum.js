@@ -23,20 +23,22 @@
   }
 
   // 1) Page-load timing, captured after the page finishes loading
+// 1) Page-load timing, captured one tick after load so values are populated
   window.addEventListener('load', function () {
-    const nav = performance.getEntriesByType('navigation')[0];
-    const fcpEntry = performance.getEntriesByType('paint')
-      .find(p => p.name === 'first-contentful-paint');
+    setTimeout(function () {
+      const nav = performance.getEntriesByType('navigation')[0];
+      const fcpEntry = performance.getEntriesByType('paint')
+        .find(p => p.name === 'first-contentful-paint');
 
-    send({
-      type: 'pageload',
-      path: location.pathname,
-      fcp: fcpEntry ? fcpEntry.startTime : null,
-      loadTime: nav ? nav.loadEventEnd : null,
-      timestamp: new Date().toISOString(),
-    });
+      send({
+        type: 'pageload',
+        path: location.pathname,
+        fcp: fcpEntry ? fcpEntry.startTime : null,
+        loadTime: nav ? nav.loadEventEnd : null,
+        timestamp: new Date().toISOString(),
+      });
+    }, 0);
   });
-
   // 2) Patch fetch to catch failed API calls from the browser
   window.fetch = function (...args) {
     const start = performance.now();
