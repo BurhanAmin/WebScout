@@ -41,11 +41,20 @@ program
   .command('stats')
   .description('Show recently logged requests')
   .action(() => {
-    const { getRecentMetrics, getRecentClientEvents } = require('../src/db');
+    const { getRecentMetrics, getRecentClientEvents, getRecentBuildMetrics } = require('../src/db');
     console.log('\n=== API metrics (server-side) ===');
     console.table(getRecentMetrics());
     console.log('\n=== Client events (browser RUM) ===');
     console.table(getRecentClientEvents());
+    console.log('\n=== Build metrics (Lighthouse) ===');
+    console.table(getRecentBuildMetrics());
+  });
+program
+  .command('audit [url]')
+  .description('Run Lighthouse against a URL and store performance metrics')
+  .action((url) => {
+    const { runAudit } = require('../src/lighthouseRunner');
+    runAudit(url || 'http://localhost:4000/');
   });
 
 program.parse();
