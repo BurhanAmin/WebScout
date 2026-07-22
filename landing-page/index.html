@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  :root{--acc:#f2b544;--acc-soft:rgba(242,181,68,0.13);--acc-glow:rgba(242,181,68,0.05);}
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   html,body{margin:0;padding:0;background:#0b0a09;color:#d6d1c6;font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
@@ -19,152 +20,224 @@
   a{color:var(--acc,#f2b544);}
   a:hover{color:#ffcf6f;}
   ::selection{background:rgba(242,181,68,0.28);color:#fff7ea;}
-  button:focus-visible,a:focus-visible{outline:2px solid var(--acc,#f2b544);outline-offset:2px;border-radius:6px;}
-  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
-  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--acc,#f2b544);outline-offset:3px;border-radius:6px;}
+  section[id]{scroll-margin-top:32px;}
+
+  /* Terminal cursor — hard blink with a ~40ms softened edge so it reads alive, not strobing. */
+  @keyframes blink{0%,46%{opacity:1}50%,96%{opacity:0}100%{opacity:1}}
+
+  /* Scroll reveal. JS only adds .dc-reveal + .dc-in; the motion itself is CSS. */
+  .dc-reveal{opacity:0;transform:translateY(14px);transition:opacity .5s cubic-bezier(.22,.61,.36,1),transform .5s cubic-bezier(.22,.61,.36,1);}
+  .dc-reveal.dc-in{opacity:1;transform:none;}
+
+  /* Section divider — hairline that fades out at both ends instead of cutting edge to edge. */
+  .sec{position:relative;}
+  .sec::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,#242019 18%,#242019 82%,transparent);}
+
+  /* Hero depth: faint glow behind the wordmark, top light, and a vignette into the next section. */
+  .hero::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 58%,rgba(0,0,0,0.42)),radial-gradient(58% 42% at 50% 26%,var(--acc-glow),transparent 72%),radial-gradient(92% 55% at 50% 0%,rgba(255,255,255,0.022),transparent 72%);}
+  .hero>*{position:relative;z-index:1;}
+
+  /* Counter band — soft red bloom sitting behind the number, on the right half. */
+  .stat::before{content:'';position:absolute;left:72%;top:50%;width:min(620px,70%);height:400px;transform:translate(-50%,-50%);pointer-events:none;background:radial-gradient(closest-side,rgba(255,107,107,0.06),transparent);}
+  .stat>*{position:relative;z-index:1;}
+
+  /* Claim on the left, evidence on the right, hairline between them. */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,5vw,72px);align-items:center;}
+  .split>:last-child{position:relative;}
+  .split>:last-child::before{content:'';position:absolute;left:calc(-1 * clamp(18px,2.5vw,36px));top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,#242019 20%,#242019 80%,transparent);}
+  @media (max-width:900px){
+    .split{grid-template-columns:1fr;gap:clamp(34px,6vh,54px);}
+    .split>:last-child::before{left:0;right:0;top:calc(-1 * clamp(17px,3vh,27px));bottom:auto;width:auto;height:1px;background:linear-gradient(90deg,transparent,#242019 20%,#242019 80%,transparent);}
+    .stat::before{left:50%;}
+  }
+
+  /* Nav — same links, now with an underline indicator. */
+  .navlink{position:relative;text-decoration:none;padding-bottom:4px;transition:color .18s ease;}
+  .navlink::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;opacity:0;transform:scaleX(.3);transition:opacity .18s ease,transform .18s cubic-bezier(.22,.61,.36,1);}
+  .navlink:hover::after,.navlink:focus-visible::after{opacity:.6;transform:scaleX(1);}
+
+  /* Terminal — idle glow, hover depth, per-line entrance. */
+  .term{background:#100e0b;border:1px solid #241f19;box-shadow:0 30px 60px -30px rgba(0,0,0,0.85),0 0 46px -22px var(--acc-glow);transition:border-color .25s ease,box-shadow .25s ease,transform .25s cubic-bezier(.22,.61,.36,1);}
+  .term:hover{transform:translateY(-2px);border-color:#2e2820;box-shadow:0 38px 72px -32px rgba(0,0,0,0.9),0 0 58px -20px var(--acc-soft);}
+  @keyframes lineIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+  .term-line{animation:lineIn .24s cubic-bezier(.22,.61,.36,1) both;}
+
+  /* Cards, table rows, command boxes — background/border live here so :hover can override them. */
+  .card{background:#13110e;border:1px solid #1e1b17;border-radius:11px;transition:border-color .2s ease,background-color .2s ease,transform .2s cubic-bezier(.22,.61,.36,1);}
+  .card:hover{background:#171410;border-color:#2b2620;transform:translateY(-2px);}
+  .step{background:#100e0b;border:1px solid #1e1b17;border-radius:10px;transition:border-color .2s ease,background-color .2s ease,transform .2s cubic-bezier(.22,.61,.36,1);}
+  .step:hover{background:#141109;border-color:#2b2620;transform:translateY(-2px);}
+  .row{transition:background-color .18s ease;}
+  .row:hover{background:rgba(242,181,68,0.03);}
+  .cmdbox{background:#100e0b;border:1px solid #241f19;transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease;}
+  .cmdbox:hover{background:#131009;border-color:#3a3227;box-shadow:0 0 34px -18px var(--acc-soft);}
+
+  /* Scroll cue — gentle idle bob so it reads as an affordance. */
+  @keyframes cue{0%,100%{transform:translate(-50%,0);opacity:.6}50%{transform:translate(-50%,5px);opacity:1}}
+  .cue{animation:cue 2.4s ease-in-out infinite;transition:color .2s ease;}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    .dc-reveal{opacity:1!important;transform:none!important;transition:none!important;}
+    .term-line,.cue{animation:none!important;}
+    .term:hover,.card:hover,.step:hover{transform:none;}
+  }
 </style>
 </helmet>
 <div ref="{{ rootRef }}" style="min-height:100vh">
 
-  <section style="min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:56px 24px 72px;border-bottom:1px solid #1e1b17;position:relative;background-image:radial-gradient(rgba(255,255,255,0.028) 1px,transparent 1px);background-size:24px 24px;background-position:center">
-    <div style="max-width:880px;width:100%;margin:0 auto">
-      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:24px">// performance &amp; error regression detector</div>
-      <h1 data-reveal="0.05" style="margin:0 auto 20px;font-family:'IBM Plex Mono',monospace;font-size:clamp(52px,12vw,132px);line-height:0.92;letter-spacing:-0.045em;font-weight:600;color:#f5f1e8">webScout<span style="{{ cursorStyle }}"></span></h1>
-      <nav data-reveal="0.08" style="display:flex;justify-content:center;gap:24px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;margin-bottom:28px">
-        <a href="#install" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">install</a>
-        <a href="#features" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">features</a>
-        <a href="#commands" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">commands</a>
-        <a href="https://github.com/BurhanAmin/WebScout" target="_blank" rel="noopener noreferrer" style="color:var(--acc,#f2b544);text-decoration:none" style-hover="color:#ffcf6f">github ↗</a>
-      </nav>
-      <p data-reveal="0.1" style="margin:0 auto 18px;font-size:clamp(20px,2.8vw,32px);line-height:1.15;font-weight:500;color:#d6d1c6;letter-spacing:-0.01em;max-width:20ch;text-wrap:balance">Catch the commit that slowed you down.</p>
-      <p data-reveal="0.15" style="margin:0 auto 40px;font-size:clamp(15px,1.8vw,18px);line-height:1.6;color:#9a9488;max-width:58ch;text-wrap:pretty">WebScout wraps any local app as a transparent proxy — <strong style="color:#cec8bb;font-weight:500">zero code changes</strong> — then flags latency and error regressions across commits and names the exact one that caused them.</p>
+  <section class="hero sec" style="min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:clamp(56px,7vh,104px) 24px clamp(64px,8vh,112px);position:relative;background-image:radial-gradient(rgba(255,255,255,0.028) 1px,transparent 1px);background-size:24px 24px;background-position:center">
+    <div style="max-width:900px;width:100%;margin:0 auto;display:flex;flex-direction:column;align-items:center">
 
-      <div style="border:1px solid #241f19;border-radius:12px;background:#100e0b;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,0.8);text-align:left;max-width:760px;margin:0 auto">
+      <!-- Masthead group: eyebrow + wordmark + nav, held tight together. -->
+      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.82;margin:0 0 clamp(14px,2vh,20px)">// performance &amp; error regression detector</div>
+      <h1 data-reveal="0.05" style="margin:0 0 clamp(16px,2.2vh,22px);font-family:'IBM Plex Mono',monospace;font-size:clamp(48px,min(11.5vw,15vh),126px);line-height:0.9;letter-spacing:-0.05em;font-weight:600;color:#f5f1e8">webScout<span style="{{ heroCursorStyle }}"></span></h1>
+      <nav data-reveal="0.08" style="display:flex;justify-content:center;gap:26px;font-size:13.5px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;margin:0 0 clamp(32px,5vh,64px)">
+        <a class="navlink" href="#install" style="color:#8f8a7d" style-hover="color:#f1ede4">install</a>
+        <a class="navlink" href="#features" style="color:#8f8a7d" style-hover="color:#f1ede4">features</a>
+        <a class="navlink" href="#commands" style="color:#8f8a7d" style-hover="color:#f1ede4">commands</a>
+        <a class="navlink" href="https://github.com/BurhanAmin/WebScout" target="_blank" rel="noopener noreferrer" style="color:var(--acc,#f2b544)" style-hover="color:#ffcf6f">github ↗</a>
+      </nav>
+
+      <!-- Proof group. The rule tethers the terminal to the masthead instead of letting it float. -->
+      <div data-reveal="0.12" aria-hidden="true" style="width:1px;height:clamp(28px,4.5vh,48px);background:linear-gradient(180deg,transparent,#2e2820);margin:0 0 clamp(10px,1.5vh,16px)"></div>
+
+      <div class="term" data-reveal="0.16" style="border-radius:12px;overflow:hidden;text-align:left;max-width:780px;width:100%;margin:0 auto">
         <div style="display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid #1d1a15;background:#141210">
           <span style="width:11px;height:11px;border-radius:50%;background:#2c2822;display:inline-block"></span>
           <span style="width:11px;height:11px;border-radius:50%;background:#2c2822;display:inline-block"></span>
           <span style="width:11px;height:11px;border-radius:50%;background:#2c2822;display:inline-block"></span>
           <span style="margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5c574d">wpd — session</span>
         </div>
-        <div style="padding:18px 18px 20px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.75;min-height:300px;overflow-x:auto">
-          <sc-for list="{{ termLines }}" as="line" hint-placeholder-count="9"><div style="min-height:1.75em"><sc-if value="{{ line.isCmd }}"><span style="color:var(--acc,#f2b544)">$ </span></sc-if><span style="{{ line.style }}">{{ line.text }}</span><sc-if value="{{ line.cursor }}"><span style="{{ cursorStyle }}"></span></sc-if></div></sc-for>
+        <div style="padding:18px 18px 20px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.75;min-height:clamp(212px,28vh,300px);overflow-x:auto">
+          <sc-for list="{{ termLines }}" as="line" hint-placeholder-count="9"><div class="term-line" style="min-height:1.75em"><sc-if value="{{ line.isCmd }}"><span style="color:var(--acc,#f2b544)">$ </span></sc-if><span style="{{ line.style }}">{{ line.text }}</span><sc-if value="{{ line.cursor }}"><span style="{{ cursorStyle }}"></span></sc-if></div></sc-for>
         </div>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:18px;justify-content:center" role="group" aria-label="Replay a command">
-        <button type="button" onClick="{{ onRun }}" style="{{ chipRun }}" style-hover="border-color:#4a3f2c">$ run</button>
-        <button type="button" onClick="{{ onStats }}" style="{{ chipStats }}" style-hover="border-color:#4a3f2c">$ stats</button>
-        <button type="button" onClick="{{ onCheck }}" style="{{ chipCheck }}" style-hover="border-color:#4a3f2c">$ check</button>
-        <button type="button" onClick="{{ onBlame }}" style="{{ chipBlame }}" style-hover="border-color:#4a3f2c">$ blame</button>
+      <div data-reveal="0.22" style="display:flex;flex-wrap:wrap;gap:8px;margin:clamp(14px,2vh,20px) 0 0;justify-content:center" role="group" aria-label="Replay a command">
+        <button type="button" onClick="{{ onRun }}" style="{{ chipRun }}" style-hover="border-color:#4a3f2c;transform:translateY(-1px)">$ run</button>
+        <button type="button" onClick="{{ onStats }}" style="{{ chipStats }}" style-hover="border-color:#4a3f2c;transform:translateY(-1px)">$ stats</button>
+        <button type="button" onClick="{{ onCheck }}" style="{{ chipCheck }}" style-hover="border-color:#4a3f2c;transform:translateY(-1px)">$ check</button>
+        <button type="button" onClick="{{ onBlame }}" style="{{ chipBlame }}" style-hover="border-color:#4a3f2c;transform:translateY(-1px)">$ blame</button>
       </div>
-      <p style="margin:11px 0 0;font-size:12.5px;color:#5c574d;font-family:'IBM Plex Mono',monospace">click a command to replay its output</p>
+      <p data-reveal="0.26" style="margin:10px 0 0;font-size:12.5px;color:#55504a;font-family:'IBM Plex Mono',monospace">click a command to replay its output</p>
     </div>
-    <a href="#install" aria-label="Scroll to install" style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:#4a463d;font-family:'IBM Plex Mono',monospace;font-size:20px;text-decoration:none" style-hover="color:var(--acc,#f2b544)">↓</a>
+    <a class="cue" href="#install" aria-label="Scroll to install" style="position:absolute;bottom:clamp(16px,2.4vh,26px);left:50%;transform:translateX(-50%);color:#6b665c;font-family:'IBM Plex Mono',monospace;font-size:18px;text-decoration:none;line-height:1" style-hover="color:var(--acc,#f2b544)">↓</a>
   </section>
 
-  <section style="border-bottom:1px solid #1e1b17;background:#0d0b09">
-    <div ref="{{ countRef }}" style="max-width:1120px;margin:0 auto;padding:74px 24px;text-align:center">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(72px,15vw,172px);line-height:0.9;font-weight:600;color:#ff6b6b;letter-spacing:-0.045em">{{ countText }}</div>
-      <p style="margin:16px auto 0;font-size:clamp(16px,2vw,20px);line-height:1.5;color:#9a9488;max-width:54ch;text-wrap:balance">latency regression on <span style="color:#f1ede4;font-family:'IBM Plex Mono',monospace">/api/report</span> — caught automatically and blamed to commit <span style="color:var(--acc,#f2b544);font-family:'IBM Plex Mono',monospace">7098d9d</span>.</p>
+  <!-- The promise and its proof: one band, split down the middle. Claim left, evidence right. -->
+  <section class="sec stat" style="background:#0d0b09">
+    <div ref="{{ countRef }}" style="max-width:1120px;margin:0 auto;padding:clamp(88px,13vh,150px) 24px">
+      <div class="split">
+        <div>
+          <h2 data-reveal="0" style="margin:0 0 clamp(16px,2.4vh,24px);font-size:clamp(28px,3.8vw,46px);line-height:1.06;font-weight:600;color:#f1ede4;letter-spacing:-0.028em;text-wrap:balance">Catch the commit that slowed you down.</h2>
+          <p data-reveal="0.06" style="margin:0;font-size:clamp(15px,1.6vw,17.5px);line-height:1.65;color:#8f8a7d;max-width:46ch;text-wrap:pretty">WebScout wraps any local app as a transparent proxy — <strong style="color:#cec8bb;font-weight:500;white-space:nowrap">zero code changes</strong> — then flags latency and error regressions across commits and names the exact one that caused them.</p>
+        </div>
+        <div>
+          <div data-reveal="0.12" style="font-family:'IBM Plex Mono',monospace;font-size:clamp(64px,9vw,132px);line-height:0.86;font-weight:600;color:#ff6b6b;letter-spacing:-0.05em;font-variant-numeric:tabular-nums;text-shadow:0 0 80px rgba(255,107,107,0.2)">{{ countText }}</div>
+          <p data-reveal="0.18" style="margin:clamp(18px,2.6vh,28px) 0 0;font-size:clamp(15px,1.6vw,17.5px);line-height:1.6;color:#8f8a7d;max-width:40ch;text-wrap:pretty">latency regression on <span style="color:#f1ede4;font-family:'IBM Plex Mono',monospace">/api/report</span> — caught automatically and blamed to commit <span style="color:var(--acc,#f2b544);font-family:'IBM Plex Mono',monospace">7098d9d</span>.</p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section id="install" style="border-bottom:1px solid #1e1b17">
-    <div style="max-width:780px;margin:0 auto;padding:84px 24px;text-align:center">
-      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:16px">01 / install</div>
-      <h2 style="margin:0 0 12px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">One line. No config.</h2>
-      <p style="margin:0 0 28px;font-size:16px;line-height:1.6;color:#9a9488">Install globally, then wrap any local app you already run.</p>
-      <div onClick="{{ onCopy }}" title="Click to copy" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#100e0b;border:1px solid #241f19;border-radius:10px;padding:14px 16px;font-family:'IBM Plex Mono',monospace;text-align:left;cursor:pointer">
+  <section class="sec" id="install">
+    <div style="max-width:780px;margin:0 auto;padding:clamp(76px,10vh,108px) 24px;text-align:center">
+      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.82;margin-bottom:18px">01 / install</div>
+      <h2 data-reveal="0.05" style="margin:0 0 14px;font-size:clamp(27px,3.2vw,36px);font-weight:600;color:#f1ede4;letter-spacing:-0.018em;line-height:1.15">One line. No config.</h2>
+      <p data-reveal="0.09" style="margin:0 0 clamp(26px,3.5vh,34px);font-size:16px;line-height:1.6;color:#8f8a7d">Install globally, then wrap any local app you already run.</p>
+      <div class="cmdbox" data-reveal="0.13" onClick="{{ onCopy }}" title="Click to copy" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-radius:10px;padding:16px 18px;font-family:'IBM Plex Mono',monospace;text-align:left;cursor:pointer">
         <span style="color:#5c574d">$</span>
-        <span style="color:#f1ede4;font-size:14.5px;word-break:break-all">{{ installCmd }}</span>
+        <span style="color:#f1ede4;font-size:15px;word-break:break-all">{{ installCmd }}</span>
         <span style="{{ cursorStyle }}"></span>
         <button type="button" onClick="{{ onCopy }}" style="{{ copyBtnStyle }}" style-hover="border-color:#4a3f2c" aria-label="Copy install command">{{ copyLabel }}</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:28px;text-align:left">
-        <div style="background:#100e0b;border:1px solid #1e1b17;border-radius:10px;padding:18px">
+      <div data-reveal-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:clamp(26px,3.5vh,34px);text-align:left">
+        <div class="step" style="padding:18px">
           <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;margin-bottom:10px">01</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f1ede4;margin-bottom:6px;word-break:break-all">npm i -g …/webscout</div>
-          <p style="margin:0;font-size:13px;color:#9a9488;line-height:1.5">Install the CLI once, globally.</p>
+          <p style="margin:0;font-size:13px;color:#8f8a7d;line-height:1.5">Install the CLI once, globally.</p>
         </div>
-        <div style="background:#100e0b;border:1px solid #1e1b17;border-radius:10px;padding:18px">
+        <div class="step" style="padding:18px">
           <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;margin-bottom:10px">02</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f1ede4;margin-bottom:6px;word-break:break-all">wpd run "npm start"</div>
-          <p style="margin:0;font-size:13px;color:#9a9488;line-height:1.5">Wrap the app you already run — no changes.</p>
+          <p style="margin:0;font-size:13px;color:#8f8a7d;line-height:1.5">Wrap the app you already run — no changes.</p>
         </div>
-        <div style="background:#100e0b;border:1px solid #1e1b17;border-radius:10px;padding:18px">
+        <div class="step" style="padding:18px">
           <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;margin-bottom:10px">03</div>
           <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f1ede4;margin-bottom:6px;word-break:break-all">wpd check</div>
-          <p style="margin:0;font-size:13px;color:#9a9488;line-height:1.5">See the regressions and the commits behind them.</p>
+          <p style="margin:0;font-size:13px;color:#8f8a7d;line-height:1.5">See the regressions and the commits behind them.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="features" style="border-bottom:1px solid #1e1b17">
-    <div style="max-width:1120px;margin:0 auto;padding:84px 24px">
-      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px">02 / capabilities</div>
-      <h2 style="margin:0 0 34px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">What it does</h2>
+  <section class="sec" id="features">
+    <div style="max-width:1120px;margin:0 auto;padding:clamp(76px,10vh,108px) 24px">
+      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.82;margin-bottom:16px">02 / capabilities</div>
+      <h2 data-reveal="0.05" style="margin:0 0 clamp(30px,4vh,42px);font-size:clamp(27px,3.2vw,36px);font-weight:600;color:#f1ede4;letter-spacing:-0.018em;line-height:1.15">What it does</h2>
       <div data-reveal-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+        <div class="card" style="padding:22px">
           <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
           <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Zero-instrumentation monitoring</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">Runs your app behind a transparent proxy. No SDK, no code changes, no config in the target app.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">Runs your app behind a transparent proxy. No SDK, no code changes, no config in the target app.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+        <div class="card" style="padding:22px">
           <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
           <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Real browser monitoring</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">RUM agent reports actual FCP / load timing and every failed fetch straight from the live page.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">RUM agent reports actual FCP / load timing and every failed fetch straight from the live page.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+        <div class="card" style="padding:22px">
           <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
           <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Lighthouse audits</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">FCP, LCP, TTI and page weight captured per commit, so you can watch scores drift over time.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">FCP, LCP, TTI and page weight captured per commit, so you can watch scores drift over time.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+        <div class="card" style="padding:22px">
           <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
           <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Automatic regression detection</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">A rolling baseline with configurable thresholds catches slowdowns and error spikes automatically.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">A rolling baseline with configurable thresholds catches slowdowns and error spikes automatically.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+        <div class="card" style="padding:22px">
           <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
           <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Commit-blame</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">Names the culprit commit and lists the files that changed in it — no manual bisecting.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">Names the culprit commit and lists the files that changed in it — no manual bisecting.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+        <div class="card" style="padding:22px">
           <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
           <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Local-first</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">Everything lands in a local SQLite file. No server, no account, no cloud, no telemetry.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">Everything lands in a local SQLite file. No server, no account, no cloud, no telemetry.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="commands" style="border-bottom:1px solid #1e1b17">
-    <div style="max-width:1120px;margin:0 auto;padding:84px 24px">
-      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px">03 / commands</div>
-      <h2 style="margin:0 0 30px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">Commands</h2>
-      <div style="border:1px solid #1e1b17;border-radius:11px;overflow:hidden;background:#100e0b">
+  <section class="sec" id="commands">
+    <div style="max-width:1120px;margin:0 auto;padding:clamp(76px,10vh,108px) 24px">
+      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.82;margin-bottom:16px">03 / commands</div>
+      <h2 data-reveal="0.05" style="margin:0 0 clamp(30px,4vh,42px);font-size:clamp(27px,3.2vw,36px);font-weight:600;color:#f1ede4;letter-spacing:-0.018em;line-height:1.15">Commands</h2>
+      <div data-reveal="0.09" style="border:1px solid #1e1b17;border-radius:11px;overflow:hidden;background:#100e0b">
         <table style="width:100%;border-collapse:collapse;font-size:15px">
           <tbody data-reveal-stagger="">
-            <tr style="border-bottom:1px solid #191510">
+            <tr class="row" style="border-bottom:1px solid #191510">
               <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">run</span></td>
-              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Wrap and launch your app through the WPD proxy with a single command.</td>
+              <td style="padding:16px 20px;color:#8f8a7d;line-height:1.55">Wrap and launch your app through the WPD proxy with a single command.</td>
             </tr>
-            <tr style="border-bottom:1px solid #191510">
+            <tr class="row" style="border-bottom:1px solid #191510">
               <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">stats</span></td>
-              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Show latency and status summaries per route (p50 / p95, request counts).</td>
+              <td style="padding:16px 20px;color:#8f8a7d;line-height:1.55">Show latency and status summaries per route (p50 / p95, request counts).</td>
             </tr>
-            <tr style="border-bottom:1px solid #191510">
+            <tr class="row" style="border-bottom:1px solid #191510">
               <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">audit</span></td>
-              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Run a Lighthouse audit for the current commit (FCP / LCP / TTI / page weight).</td>
+              <td style="padding:16px 20px;color:#8f8a7d;line-height:1.55">Run a Lighthouse audit for the current commit (FCP / LCP / TTI / page weight).</td>
             </tr>
-            <tr style="border-bottom:1px solid #191510">
+            <tr class="row" style="border-bottom:1px solid #191510">
               <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">check</span></td>
-              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Detect regressions against the rolling baseline and print what crossed threshold.</td>
+              <td style="padding:16px 20px;color:#8f8a7d;line-height:1.55">Detect regressions against the rolling baseline and print what crossed threshold.</td>
             </tr>
-            <tr>
+            <tr class="row">
               <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">blame</span></td>
-              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Name the commit that introduced a regression, with author and changed files.</td>
+              <td style="padding:16px 20px;color:#8f8a7d;line-height:1.55">Name the commit that introduced a regression, with author and changed files.</td>
             </tr>
           </tbody>
         </table>
@@ -172,34 +245,34 @@
     </div>
   </section>
 
-  <section id="faq" style="border-bottom:1px solid #1e1b17">
-    <div style="max-width:1120px;margin:0 auto;padding:84px 24px">
-      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px">04 / how it's different</div>
-      <h2 style="margin:0 0 34px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">Why not just use what you have?</h2>
+  <section class="sec" id="faq">
+    <div style="max-width:1120px;margin:0 auto;padding:clamp(76px,10vh,108px) 24px">
+      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.82;margin-bottom:16px">04 / how it's different</div>
+      <h2 data-reveal="0.05" style="margin:0 0 clamp(30px,4vh,42px);font-size:clamp(27px,3.2vw,36px);font-weight:600;color:#f1ede4;letter-spacing:-0.018em;line-height:1.15">Why not just use what you have?</h2>
       <div data-reveal-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+        <div class="card" style="padding:24px">
           <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">How is this different from Sentry or Datadog?</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">Those need an SDK wired into your code and stream data to a cloud dashboard. WebScout sits in front of your app as a proxy — zero instrumentation — and keeps everything in a local SQLite file.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">Those need an SDK wired into your code and stream data to a cloud dashboard. WebScout sits in front of your app as a proxy — zero instrumentation — and keeps everything in a local SQLite file.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+        <div class="card" style="padding:24px">
           <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">Isn't this just Lighthouse CI?</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">Lighthouse only measures page loads. WebScout also proxies every API call, records real browser timing and fetch errors, and ties each regression back to the commit that caused it.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">Lighthouse only measures page loads. WebScout also proxies every API call, records real browser timing and fetch errors, and ties each regression back to the commit that caused it.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+        <div class="card" style="padding:24px">
           <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">Do I have to change my app?</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">No. <span style="font-family:'IBM Plex Mono',monospace;color:#cec8bb">wpd run "npm start"</span> wraps whatever command you already use. No code edits, no config files, no annotations.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">No. <span style="font-family:'IBM Plex Mono',monospace;color:#cec8bb">wpd run "npm start"</span> wraps whatever command you already use. No code edits, no config files, no annotations.</p>
         </div>
-        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+        <div class="card" style="padding:24px">
           <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">Where does my data go?</h3>
-          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">Nowhere. No server, no account, no telemetry — just a local <span style="font-family:'IBM Plex Mono',monospace;color:#cec8bb">.sqlite</span> file you can inspect or delete anytime.</p>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#8f8a7d">Nowhere. No server, no account, no telemetry — just a local <span style="font-family:'IBM Plex Mono',monospace;color:#cec8bb">.sqlite</span> file you can inspect or delete anytime.</p>
         </div>
       </div>
     </div>
   </section>
 
   <footer style="background:#0a0908">
-    <div style="max-width:1120px;margin:0 auto;padding:56px 24px">
-      <div onClick="{{ onCopy }}" title="Click to copy" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#100e0b;border:1px solid #241f19;border-radius:10px;padding:14px 16px;font-family:'IBM Plex Mono',monospace;margin-bottom:36px;cursor:pointer">
+    <div style="max-width:1120px;margin:0 auto;padding:clamp(56px,7vh,78px) 24px">
+      <div class="cmdbox" data-reveal="0" onClick="{{ onCopy }}" title="Click to copy" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-radius:10px;padding:16px 18px;font-family:'IBM Plex Mono',monospace;margin-bottom:clamp(36px,5vh,48px);cursor:pointer">
         <span style="color:#5c574d">$</span>
         <span style="color:#f1ede4;font-size:14.5px;word-break:break-all">{{ installCmd }}</span>
         <button type="button" onClick="{{ onCopy }}" style="{{ copyBtnStyle }}" style-hover="border-color:#4a3f2c" aria-label="Copy install command">{{ copyLabel }}</button>
@@ -209,10 +282,10 @@
           <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:15px;margin-bottom:12px"><span style="width:11px;height:11px;background:var(--acc,#f2b544);border-radius:2px;display:inline-block"></span><span style="color:#f1ede4;font-weight:600">webScout</span></div>
           <p style="margin:0;font-size:13.5px;color:#6b665c;font-family:'IBM Plex Mono',monospace;line-height:1.7">Requires Node 24+ and a Chromium browser.<br>MIT License.</p>
         </div>
-        <nav style="display:flex;gap:22px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap">
-          <a href="https://github.com/BurhanAmin/WebScout" target="_blank" rel="noopener noreferrer" style="color:var(--acc,#f2b544);text-decoration:none" style-hover="color:#ffcf6f">GitHub ↗</a>
-          <a href="#commands" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">Commands</a>
-          <a href="#install" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">Install</a>
+        <nav style="display:flex;gap:24px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap">
+          <a class="navlink" href="https://github.com/BurhanAmin/WebScout" target="_blank" rel="noopener noreferrer" style="color:var(--acc,#f2b544)" style-hover="color:#ffcf6f">GitHub ↗</a>
+          <a class="navlink" href="#commands" style="color:#8f8a7d" style-hover="color:#f1ede4">Commands</a>
+          <a class="navlink" href="#install" style="color:#8f8a7d" style-hover="color:#f1ede4">Install</a>
         </nav>
       </div>
     </div>
@@ -281,35 +354,38 @@ class Component extends DCLogic {
       return;
     }
     const target = 199;
-    const start = performance.now();
-    const duration = 1400;
+    const duration = 1500;
+    let start = 0;
     const tick = (now) => {
       if (this._dead) return;
+      if (!start) start = now;
       const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const val = Math.round(target * eased);
-      this.setState({ countText: '+' + val + '%' });
+      // Quintic ease-out: sprints early, settles slowly on the final digits.
+      const eased = 1 - Math.pow(1 - t, 5);
+      this.setState({ countText: '+' + Math.round(target * eased) + '%' });
       if (t < 1) requestAnimationFrame(tick);
     };
     const io = new IntersectionObserver((entries) => {
-      if (entries.some(e => e.isIntersecting)) {
-        io.disconnect();
-        requestAnimationFrame(tick);
-      }
-    }, { threshold: 0.3 });
+      if (!entries.some(e => e.isIntersecting)) return;
+      io.disconnect();
+      // Let the section's fade-up land first, so the count reads as a beat of its own.
+      this._ct2 = setTimeout(() => { if (!this._dead) requestAnimationFrame(tick); }, 180);
+    }, { threshold: 0.35 });
     io.observe(this._countEl);
     this._countIo = io;
   }
 
   setupReveal(reduced) {
-    if (reduced || !this._root) return;
+    // No observer means no way to un-hide, so never hide in the first place.
+    if (reduced || !this._root || !('IntersectionObserver' in window)) return;
     const targets = [];
     this._root.querySelectorAll('[data-reveal]').forEach(el => { targets.push([el, parseFloat(el.getAttribute('data-reveal')) || 0]); });
-    this._root.querySelectorAll('[data-reveal-stagger]').forEach(group => { Array.from(group.children).forEach((el, i) => targets.push([el, i * 0.06])); });
-    targets.forEach(([el, d]) => { el.style.opacity = '0'; el.style.transform = 'translateY(18px)'; el.style.transition = 'opacity .55s ease, transform .55s ease'; el.style.transitionDelay = d + 's'; });
+    this._root.querySelectorAll('[data-reveal-stagger]').forEach(group => { Array.from(group.children).forEach((el, i) => targets.push([el, i * 0.05])); });
+    // The class carries the motion (see helmet CSS); JS only tags elements and flips them on.
+    targets.forEach(([el, d]) => { el.classList.add('dc-reveal'); el.style.transitionDelay = d + 's'; });
     this._io = new IntersectionObserver((es) => {
-      es.forEach(e => { if (e.isIntersecting) { e.target.style.opacity = '1'; e.target.style.transform = 'none'; this._io.unobserve(e.target); } });
-    }, { threshold: 0.12 });
+      es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('dc-in'); this._io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
     targets.forEach(([el]) => this._io.observe(el));
   }
 
@@ -321,6 +397,7 @@ class Component extends DCLogic {
     this._dead = true;
     clearTimeout(this._t);
     clearTimeout(this._ct);
+    clearTimeout(this._ct2);
     if (this._io) this._io.disconnect();
     if (this._countIo) this._countIo.disconnect();
   }
@@ -330,6 +407,7 @@ class Component extends DCLogic {
       const el = this._root || document.documentElement;
       el.style.setProperty('--acc', hex);
       el.style.setProperty('--acc-soft', this._soft(hex, 0.13));
+      el.style.setProperty('--acc-glow', this._soft(hex, 0.05));
     } catch (e) {}
   }
   _soft(hex, a) {
@@ -354,7 +432,8 @@ class Component extends DCLogic {
           lines[lines.length - 1] = { kind: 'cmd', text: partial };
           return { lines };
         });
-        if (i < text.length) this._t = setTimeout(step, 42 + Math.random() * 70);
+        // Tighter jitter than a raw random spread — reads as a fast, steady typist.
+        if (i < text.length) this._t = setTimeout(step, 34 + Math.random() * 38);
         else res();
       };
       this._t = setTimeout(step, 90);
@@ -422,7 +501,10 @@ class Component extends DCLogic {
       cursor: i === ls.length - 1,
     }));
     const cursorStyle = { display: 'inline-block', width: '8px', height: '1.05em', verticalAlign: '-2px', background: 'var(--acc,#f2b544)', marginLeft: '3px', borderRadius: '1px' };
-    if (!this.state.reduced) cursorStyle.animation = 'blink 1.05s step-end infinite';
+    if (!this.state.reduced) cursorStyle.animation = 'blink 1.05s linear infinite';
+    // The wordmark cursor is sized in em so it tracks the cap height instead of towering over it.
+    const heroCursorStyle = { display: 'inline-block', width: '0.055em', height: '0.62em', verticalAlign: 'baseline', background: 'var(--acc,#f2b544)', marginLeft: '0.07em', borderRadius: '1px', opacity: 0.9 };
+    if (!this.state.reduced) heroCursorStyle.animation = 'blink 1.05s linear infinite';
 
     const chip = (name) => {
       const a = this.state.activeChip === name;
@@ -433,7 +515,7 @@ class Component extends DCLogic {
     const copyBtnStyle = { marginLeft: 'auto', fontFamily: "'IBM Plex Mono',monospace", fontSize: '13px', padding: '7px 13px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap', border: '1px solid ' + (copied ? 'var(--acc,#f2b544)' : '#2a251d'), background: copied ? 'var(--acc-soft,rgba(242,181,68,0.13))' : '#181512', color: copied ? 'var(--acc,#f2b544)' : '#d6d1c6', transition: 'all .15s ease' };
 
     return {
-      termLines, cursorStyle, countText: this.state.countText,
+      termLines, cursorStyle, heroCursorStyle, countText: this.state.countText,
       rootRef: el => { if (el) this._root = el; },
       countRef: el => { if (el) this._countEl = el; },
       onRun: () => this.chip('run'), onStats: () => this.chip('stats'), onCheck: () => this.chip('check'), onBlame: () => this.chip('blame'),
