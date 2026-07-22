@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  html,body{margin:0;padding:0;background:#0b0a09;color:#d6d1c6;font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;}
+  a{color:var(--acc,#f2b544);}
+  a:hover{color:#ffcf6f;}
+  ::selection{background:rgba(242,181,68,0.28);color:#fff7ea;}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--acc,#f2b544);outline-offset:2px;border-radius:6px;}
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh">
+
+  <section style="min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:56px 24px 72px;border-bottom:1px solid #1e1b17;position:relative;background-image:radial-gradient(rgba(255,255,255,0.028) 1px,transparent 1px);background-size:24px 24px;background-position:center">
+    <div style="max-width:880px;width:100%;margin:0 auto">
+      <div data-reveal="0" style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:24px">// performance &amp; error regression detector</div>
+      <h1 data-reveal="0.05" style="margin:0 auto 20px;font-family:'IBM Plex Mono',monospace;font-size:clamp(52px,12vw,132px);line-height:0.92;letter-spacing:-0.045em;font-weight:600;color:#f5f1e8">webScout<span style="{{ cursorStyle }}"></span></h1>
+      <nav data-reveal="0.08" style="display:flex;justify-content:center;gap:24px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;margin-bottom:28px">
+        <a href="#install" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">install</a>
+        <a href="#features" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">features</a>
+        <a href="#commands" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">commands</a>
+        <a href="https://github.com/BurhanAmin/WebScout" target="_blank" rel="noopener noreferrer" style="color:var(--acc,#f2b544);text-decoration:none" style-hover="color:#ffcf6f">github ↗</a>
+      </nav>
+      <p data-reveal="0.1" style="margin:0 auto 18px;font-size:clamp(20px,2.8vw,32px);line-height:1.15;font-weight:500;color:#d6d1c6;letter-spacing:-0.01em;max-width:20ch;text-wrap:balance">Catch the commit that slowed you down.</p>
+      <p data-reveal="0.15" style="margin:0 auto 40px;font-size:clamp(15px,1.8vw,18px);line-height:1.6;color:#9a9488;max-width:58ch;text-wrap:pretty">WebScout wraps any local app as a transparent proxy — <strong style="color:#cec8bb;font-weight:500">zero code changes</strong> — then flags latency and error regressions across commits and names the exact one that caused them.</p>
+
+      <div style="border:1px solid #241f19;border-radius:12px;background:#100e0b;overflow:hidden;box-shadow:0 30px 60px -30px rgba(0,0,0,0.8);text-align:left;max-width:760px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid #1d1a15;background:#141210">
+          <span style="width:11px;height:11px;border-radius:50%;background:#2c2822;display:inline-block"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#2c2822;display:inline-block"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#2c2822;display:inline-block"></span>
+          <span style="margin-left:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5c574d">wpd — session</span>
+        </div>
+        <div style="padding:18px 18px 20px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.75;min-height:300px;overflow-x:auto">
+          <sc-for list="{{ termLines }}" as="line" hint-placeholder-count="9"><div style="min-height:1.75em"><sc-if value="{{ line.isCmd }}"><span style="color:var(--acc,#f2b544)">$ </span></sc-if><span style="{{ line.style }}">{{ line.text }}</span><sc-if value="{{ line.cursor }}"><span style="{{ cursorStyle }}"></span></sc-if></div></sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:9px;margin-top:18px;justify-content:center" role="group" aria-label="Replay a command">
+        <button type="button" onClick="{{ onRun }}" style="{{ chipRun }}" style-hover="border-color:#4a3f2c">$ run</button>
+        <button type="button" onClick="{{ onStats }}" style="{{ chipStats }}" style-hover="border-color:#4a3f2c">$ stats</button>
+        <button type="button" onClick="{{ onCheck }}" style="{{ chipCheck }}" style-hover="border-color:#4a3f2c">$ check</button>
+        <button type="button" onClick="{{ onBlame }}" style="{{ chipBlame }}" style-hover="border-color:#4a3f2c">$ blame</button>
+      </div>
+      <p style="margin:11px 0 0;font-size:12.5px;color:#5c574d;font-family:'IBM Plex Mono',monospace">click a command to replay its output</p>
+    </div>
+    <a href="#install" aria-label="Scroll to install" style="position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:#4a463d;font-family:'IBM Plex Mono',monospace;font-size:20px;text-decoration:none" style-hover="color:var(--acc,#f2b544)">↓</a>
+  </section>
+
+  <section style="border-bottom:1px solid #1e1b17;background:#0d0b09">
+    <div ref="{{ countRef }}" style="max-width:1120px;margin:0 auto;padding:74px 24px;text-align:center">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(72px,15vw,172px);line-height:0.9;font-weight:600;color:#ff6b6b;letter-spacing:-0.045em">{{ countText }}</div>
+      <p style="margin:16px auto 0;font-size:clamp(16px,2vw,20px);line-height:1.5;color:#9a9488;max-width:54ch;text-wrap:balance">latency regression on <span style="color:#f1ede4;font-family:'IBM Plex Mono',monospace">/api/report</span> — caught automatically and blamed to commit <span style="color:var(--acc,#f2b544);font-family:'IBM Plex Mono',monospace">7098d9d</span>.</p>
+    </div>
+  </section>
+
+  <section id="install" style="border-bottom:1px solid #1e1b17">
+    <div style="max-width:780px;margin:0 auto;padding:84px 24px;text-align:center">
+      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:16px">01 / install</div>
+      <h2 style="margin:0 0 12px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">One line. No config.</h2>
+      <p style="margin:0 0 28px;font-size:16px;line-height:1.6;color:#9a9488">Install globally, then wrap any local app you already run.</p>
+      <div onClick="{{ onCopy }}" title="Click to copy" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#100e0b;border:1px solid #241f19;border-radius:10px;padding:14px 16px;font-family:'IBM Plex Mono',monospace;text-align:left;cursor:pointer">
+        <span style="color:#5c574d">$</span>
+        <span style="color:#f1ede4;font-size:14.5px;word-break:break-all">{{ installCmd }}</span>
+        <span style="{{ cursorStyle }}"></span>
+        <button type="button" onClick="{{ onCopy }}" style="{{ copyBtnStyle }}" style-hover="border-color:#4a3f2c" aria-label="Copy install command">{{ copyLabel }}</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:28px;text-align:left">
+        <div style="background:#100e0b;border:1px solid #1e1b17;border-radius:10px;padding:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;margin-bottom:10px">01</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f1ede4;margin-bottom:6px;word-break:break-all">npm i -g …/webscout</div>
+          <p style="margin:0;font-size:13px;color:#9a9488;line-height:1.5">Install the CLI once, globally.</p>
+        </div>
+        <div style="background:#100e0b;border:1px solid #1e1b17;border-radius:10px;padding:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;margin-bottom:10px">02</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f1ede4;margin-bottom:6px;word-break:break-all">wpd run "npm start"</div>
+          <p style="margin:0;font-size:13px;color:#9a9488;line-height:1.5">Wrap the app you already run — no changes.</p>
+        </div>
+        <div style="background:#100e0b;border:1px solid #1e1b17;border-radius:10px;padding:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;margin-bottom:10px">03</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f1ede4;margin-bottom:6px;word-break:break-all">wpd check</div>
+          <p style="margin:0;font-size:13px;color:#9a9488;line-height:1.5">See the regressions and the commits behind them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" style="border-bottom:1px solid #1e1b17">
+    <div style="max-width:1120px;margin:0 auto;padding:84px 24px">
+      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px">02 / capabilities</div>
+      <h2 style="margin:0 0 34px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">What it does</h2>
+      <div data-reveal-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px">
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+          <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
+          <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Zero-instrumentation monitoring</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">Runs your app behind a transparent proxy. No SDK, no code changes, no config in the target app.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+          <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
+          <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Real browser monitoring</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">RUM agent reports actual FCP / load timing and every failed fetch straight from the live page.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+          <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
+          <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Lighthouse audits</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">FCP, LCP, TTI and page weight captured per commit, so you can watch scores drift over time.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+          <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
+          <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Automatic regression detection</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">A rolling baseline with configurable thresholds catches slowdowns and error spikes automatically.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+          <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
+          <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Commit-blame</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">Names the culprit commit and lists the files that changed in it — no manual bisecting.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:22px">
+          <div style="width:9px;height:9px;background:var(--acc,#f2b544);border-radius:2px;margin-bottom:16px"></div>
+          <h3 style="margin:0 0 8px;font-size:16.5px;color:#f1ede4;font-weight:600">Local-first</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#9a9488">Everything lands in a local SQLite file. No server, no account, no cloud, no telemetry.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="commands" style="border-bottom:1px solid #1e1b17">
+    <div style="max-width:1120px;margin:0 auto;padding:84px 24px">
+      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px">03 / commands</div>
+      <h2 style="margin:0 0 30px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">Commands</h2>
+      <div style="border:1px solid #1e1b17;border-radius:11px;overflow:hidden;background:#100e0b">
+        <table style="width:100%;border-collapse:collapse;font-size:15px">
+          <tbody data-reveal-stagger="">
+            <tr style="border-bottom:1px solid #191510">
+              <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">run</span></td>
+              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Wrap and launch your app through the WPD proxy with a single command.</td>
+            </tr>
+            <tr style="border-bottom:1px solid #191510">
+              <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">stats</span></td>
+              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Show latency and status summaries per route (p50 / p95, request counts).</td>
+            </tr>
+            <tr style="border-bottom:1px solid #191510">
+              <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">audit</span></td>
+              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Run a Lighthouse audit for the current commit (FCP / LCP / TTI / page weight).</td>
+            </tr>
+            <tr style="border-bottom:1px solid #191510">
+              <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">check</span></td>
+              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Detect regressions against the rolling baseline and print what crossed threshold.</td>
+            </tr>
+            <tr>
+              <td style="padding:16px 20px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;vertical-align:top"><span style="color:#5c574d">wpd </span><span style="color:var(--acc,#f2b544);font-weight:500">blame</span></td>
+              <td style="padding:16px 20px;color:#9a9488;line-height:1.5">Name the commit that introduced a regression, with author and changed files.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" style="border-bottom:1px solid #1e1b17">
+    <div style="max-width:1120px;margin:0 auto;padding:84px 24px">
+      <div style="font-family:'IBM Plex Mono',monospace;color:var(--acc,#f2b544);font-size:13px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px">04 / how it's different</div>
+      <h2 style="margin:0 0 34px;font-size:clamp(26px,3vw,34px);font-weight:600;color:#f1ede4;letter-spacing:-0.01em">Why not just use what you have?</h2>
+      <div data-reveal-stagger="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+          <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">How is this different from Sentry or Datadog?</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">Those need an SDK wired into your code and stream data to a cloud dashboard. WebScout sits in front of your app as a proxy — zero instrumentation — and keeps everything in a local SQLite file.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+          <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">Isn't this just Lighthouse CI?</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">Lighthouse only measures page loads. WebScout also proxies every API call, records real browser timing and fetch errors, and ties each regression back to the commit that caused it.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+          <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">Do I have to change my app?</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">No. <span style="font-family:'IBM Plex Mono',monospace;color:#cec8bb">wpd run "npm start"</span> wraps whatever command you already use. No code edits, no config files, no annotations.</p>
+        </div>
+        <div style="background:#13110e;border:1px solid #1e1b17;border-radius:11px;padding:24px">
+          <h3 style="margin:0 0 10px;font-size:16.5px;color:#f1ede4;font-weight:600;line-height:1.35">Where does my data go?</h3>
+          <p style="margin:0;font-size:14.5px;line-height:1.6;color:#9a9488">Nowhere. No server, no account, no telemetry — just a local <span style="font-family:'IBM Plex Mono',monospace;color:#cec8bb">.sqlite</span> file you can inspect or delete anytime.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background:#0a0908">
+    <div style="max-width:1120px;margin:0 auto;padding:56px 24px">
+      <div onClick="{{ onCopy }}" title="Click to copy" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#100e0b;border:1px solid #241f19;border-radius:10px;padding:14px 16px;font-family:'IBM Plex Mono',monospace;margin-bottom:36px;cursor:pointer">
+        <span style="color:#5c574d">$</span>
+        <span style="color:#f1ede4;font-size:14.5px;word-break:break-all">{{ installCmd }}</span>
+        <button type="button" onClick="{{ onCopy }}" style="{{ copyBtnStyle }}" style-hover="border-color:#4a3f2c" aria-label="Copy install command">{{ copyLabel }}</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:15px;margin-bottom:12px"><span style="width:11px;height:11px;background:var(--acc,#f2b544);border-radius:2px;display:inline-block"></span><span style="color:#f1ede4;font-weight:600">webScout</span></div>
+          <p style="margin:0;font-size:13.5px;color:#6b665c;font-family:'IBM Plex Mono',monospace;line-height:1.7">Requires Node 24+ and a Chromium browser.<br>MIT License.</p>
+        </div>
+        <nav style="display:flex;gap:22px;font-size:14px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap">
+          <a href="https://github.com/BurhanAmin/WebScout" target="_blank" rel="noopener noreferrer" style="color:var(--acc,#f2b544);text-decoration:none" style-hover="color:#ffcf6f">GitHub ↗</a>
+          <a href="#commands" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">Commands</a>
+          <a href="#install" style="color:#a8a294;text-decoration:none" style-hover="color:#f1ede4">Install</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: &quot;100%&quot; },
+  &quot;accent&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#f2b544&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;#f2b544&quot;, &quot;#4ec9dc&quot;], &quot;section&quot;: &quot;Theme&quot; },
+  &quot;packageName&quot;: { &quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;@burhanamin/webscout&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Content&quot; }
+}">
+class Component extends DCLogic {
+  _runId = 0;
+  state = { lines: [], copied: false, reduced: false, activeChip: 'run', countText: '+0%' };
+
+  sessions = {
+    main: [
+      { kind: 'cmd', text: 'wpd run "npm start"' },
+      { kind: 'out', text: 'WPD proxy on http://localhost:5050 -> forwarding to :4000' },
+      { kind: 'out', text: 'GET /api/report -> 200 (912ms)' },
+      { kind: 'cmd', text: 'wpd check' },
+      { kind: 'out', text: '1 regression(s) detected:' },
+      { kind: 'bad', text: '  [latency] Latency up 199% on /api/report  (commit 7098d9d)', pause: 700 },
+      { kind: 'cmd', text: 'wpd blame' },
+      { kind: 'out', text: '  Likely introduced: 7098d9d "Slow down report endpoint"' },
+      { kind: 'out', text: '  Files changed: target-app/server.js' },
+    ],
+    stats: [
+      { kind: 'cmd', text: 'wpd stats' },
+      { kind: 'out', text: '  ROUTE              REQS   p50      p95' },
+      { kind: 'out', text: '  GET /api/report     142   340ms    912ms' },
+      { kind: 'out', text: '  GET /api/users       88    72ms    140ms' },
+      { kind: 'out', text: '  POST /api/login      54    98ms    210ms' },
+    ],
+    check: [
+      { kind: 'cmd', text: 'wpd check' },
+      { kind: 'out', text: '1 regression(s) detected:' },
+      { kind: 'bad', text: '  [latency] Latency up 199% on /api/report  (commit 7098d9d)', pause: 700 },
+      { kind: 'out', text: '  baseline p95 305ms -> now 912ms  (threshold +50%)' },
+    ],
+    blame: [
+      { kind: 'cmd', text: 'wpd blame' },
+      { kind: 'out', text: '  Likely introduced: 7098d9d "Slow down report endpoint"' },
+      { kind: 'out', text: '  Author: burhan   committed 2h ago' },
+      { kind: 'out', text: '  Files changed: target-app/server.js' },
+    ],
+  };
+
+  componentDidMount() {
+    const reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.setState({ reduced });
+    if (this.props.accent) this._applyAccent(this.props.accent);
+    if (reduced) {
+      this.setState({ lines: this.sessions.main.map(l => ({ ...l })), activeChip: 'run' });
+    } else {
+      this.loop();
+    }
+    this.setupReveal(reduced);
+    this.setupCount();
+  }
+
+  setupCount() {
+    if (!this._countEl || this.state.reduced) {
+      this.setState({ countText: '+199%' });
+      return;
+    }
+    const target = 199;
+    const start = performance.now();
+    const duration = 1400;
+    const tick = (now) => {
+      if (this._dead) return;
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = Math.round(target * eased);
+      this.setState({ countText: '+' + val + '%' });
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) {
+        io.disconnect();
+        requestAnimationFrame(tick);
+      }
+    }, { threshold: 0.3 });
+    io.observe(this._countEl);
+    this._countIo = io;
+  }
+
+  setupReveal(reduced) {
+    if (reduced || !this._root) return;
+    const targets = [];
+    this._root.querySelectorAll('[data-reveal]').forEach(el => { targets.push([el, parseFloat(el.getAttribute('data-reveal')) || 0]); });
+    this._root.querySelectorAll('[data-reveal-stagger]').forEach(group => { Array.from(group.children).forEach((el, i) => targets.push([el, i * 0.06])); });
+    targets.forEach(([el, d]) => { el.style.opacity = '0'; el.style.transform = 'translateY(18px)'; el.style.transition = 'opacity .55s ease, transform .55s ease'; el.style.transitionDelay = d + 's'; });
+    this._io = new IntersectionObserver((es) => {
+      es.forEach(e => { if (e.isIntersecting) { e.target.style.opacity = '1'; e.target.style.transform = 'none'; this._io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    targets.forEach(([el]) => this._io.observe(el));
+  }
+
+  componentDidUpdate(prev) {
+    if (prev.accent !== this.props.accent && this.props.accent) this._applyAccent(this.props.accent);
+  }
+
+  componentWillUnmount() {
+    this._dead = true;
+    clearTimeout(this._t);
+    clearTimeout(this._ct);
+    if (this._io) this._io.disconnect();
+    if (this._countIo) this._countIo.disconnect();
+  }
+
+  _applyAccent(hex) {
+    try {
+      const el = this._root || document.documentElement;
+      el.style.setProperty('--acc', hex);
+      el.style.setProperty('--acc-soft', this._soft(hex, 0.13));
+    } catch (e) {}
+  }
+  _soft(hex, a) {
+    const h = hex.replace('#', '');
+    const f = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    const n = parseInt(f, 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  wait(ms) { return new Promise(res => { this._t = setTimeout(res, ms); }); }
+
+  typeLine(text, id) {
+    return new Promise(res => {
+      this.setState(s => ({ lines: [...s.lines, { kind: 'cmd', text: '' }] }));
+      let i = 0;
+      const step = () => {
+        if (this._runId !== id || this._dead) { res(); return; }
+        i++;
+        const partial = text.slice(0, i);
+        this.setState(s => {
+          const lines = s.lines.slice();
+          lines[lines.length - 1] = { kind: 'cmd', text: partial };
+          return { lines };
+        });
+        if (i < text.length) this._t = setTimeout(step, 42 + Math.random() * 70);
+        else res();
+      };
+      this._t = setTimeout(step, 90);
+    });
+  }
+
+  async play(lines, id) {
+    this.setState({ lines: [] });
+    await this.wait(140);
+    for (const line of lines) {
+      if (this._runId !== id || this._dead) return;
+      if (line.kind === 'cmd') {
+        await this.typeLine(line.text, id);
+        await this.wait(480);
+      } else {
+        if (this._runId !== id || this._dead) return;
+        this.setState(s => ({ lines: [...s.lines, { kind: line.kind, text: line.text }] }));
+        await this.wait(line.pause || 240);
+      }
+    }
+  }
+
+  async loop() {
+    const id = ++this._runId;
+    this.setState({ activeChip: 'run' });
+    while (this._runId === id && !this._dead) {
+      await this.play(this.sessions.main, id);
+      if (this._runId !== id || this._dead) return;
+      await this.wait(3000);
+    }
+  }
+
+  chip(name) {
+    if (this.state.reduced) {
+      const key = name === 'run' ? 'main' : name;
+      this.setState({ lines: this.sessions[key].map(l => ({ ...l })), activeChip: name });
+      return;
+    }
+    if (name === 'run') { this.loop(); return; }
+    const id = ++this._runId;
+    this.setState({ activeChip: name });
+    this.play(this.sessions[name], id);
+  }
+
+  copy() {
+    const cmd = 'npm install -g ' + (this.props.packageName || '@burhanamin/webscout');
+    try { if (navigator.clipboard) navigator.clipboard.writeText(cmd); } catch (e) {}
+    this.setState({ copied: true });
+    clearTimeout(this._ct);
+    this._ct = setTimeout(() => { if (!this._dead) this.setState({ copied: false }); }, 1600);
+  }
+
+  renderVals() {
+    const base = { whiteSpace: 'pre-wrap', wordBreak: 'break-word' };
+    const kstyle = {
+      cmd: { ...base, color: '#f1ede4', fontWeight: 500 },
+      out: { ...base, color: '#a29b8d' },
+      bad: { ...base, color: '#ff6b6b', fontWeight: 600 },
+    };
+    let ls = (this.state.lines && this.state.lines.length) ? this.state.lines : [{ kind: 'cmd', text: '' }];
+    const termLines = ls.map((l, i) => ({
+      isCmd: l.kind === 'cmd',
+      style: kstyle[l.kind] || kstyle.out,
+      text: l.text,
+      cursor: i === ls.length - 1,
+    }));
+    const cursorStyle = { display: 'inline-block', width: '8px', height: '1.05em', verticalAlign: '-2px', background: 'var(--acc,#f2b544)', marginLeft: '3px', borderRadius: '1px' };
+    if (!this.state.reduced) cursorStyle.animation = 'blink 1.05s step-end infinite';
+
+    const chip = (name) => {
+      const a = this.state.activeChip === name;
+      return { fontFamily: "'IBM Plex Mono',monospace", fontSize: '13px', padding: '7px 13px', borderRadius: '7px', cursor: 'pointer', background: a ? 'var(--acc-soft,rgba(242,181,68,0.13))' : '#161310', color: a ? 'var(--acc,#f2b544)' : '#a8a294', border: '1px solid ' + (a ? 'var(--acc,#f2b544)' : '#2a251d'), transition: 'all .15s ease' };
+    };
+
+    const copied = this.state.copied;
+    const copyBtnStyle = { marginLeft: 'auto', fontFamily: "'IBM Plex Mono',monospace", fontSize: '13px', padding: '7px 13px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap', border: '1px solid ' + (copied ? 'var(--acc,#f2b544)' : '#2a251d'), background: copied ? 'var(--acc-soft,rgba(242,181,68,0.13))' : '#181512', color: copied ? 'var(--acc,#f2b544)' : '#d6d1c6', transition: 'all .15s ease' };
+
+    return {
+      termLines, cursorStyle, countText: this.state.countText,
+      rootRef: el => { if (el) this._root = el; },
+      countRef: el => { if (el) this._countEl = el; },
+      onRun: () => this.chip('run'), onStats: () => this.chip('stats'), onCheck: () => this.chip('check'), onBlame: () => this.chip('blame'),
+      chipRun: chip('run'), chipStats: chip('stats'), chipCheck: chip('check'), chipBlame: chip('blame'),
+      onCopy: () => this.copy(), copyLabel: copied ? 'copied ✓' : 'copy', copyBtnStyle,
+      installCmd: 'npm install -g ' + (this.props.packageName || '@burhanamin/webscout'),
+    };
+  }
+}
+</script>
+</body>
+</html>
