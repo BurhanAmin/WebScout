@@ -161,10 +161,20 @@ function insertRegression(r) {
 function getRegressions() { return getRegressionsStmt.all(); }
 function clearRegressions() { clearRegressionsStmt.run(); }
 // --- Exports (must be last, after everything is defined) ---
+const allCommitsStmt = db.prepare(`
+  SELECT commit_hash, MAX(ts) AS last_seen FROM (
+    SELECT commit_hash, timestamp AS ts FROM api_metrics
+    UNION ALL
+    SELECT commit_hash, timestamp AS ts FROM build_metrics
+  )
+  GROUP BY commit_hash
+  ORDER BY last_seen ASC
+`);
+function getAllCommitsOrdered() { return allCommitsStmt.all(); }
 module.exports = {
   logMetric, getRecentMetrics,
   logClientEvent, getRecentClientEvents,
   logBuildMetric, getRecentBuildMetrics,
   getApiCommits, getBuildCommits, getApiEndpointStats, getBuildStats,
-  insertRegression, getRegressions, clearRegressions,
+  insertRegression, getRegressions, clearRegressions,getAllCommitsOrdered
 };

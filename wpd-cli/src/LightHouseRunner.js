@@ -3,8 +3,25 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { logBuildMetric } = require('./db');
- const chromePath = process.env.CHROME_PATH
-    || '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser';
+
+function findChrome() {
+  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
+  const candidates = {
+    darwin: [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    ],
+    linux: ['/usr/bin/google-chrome', '/usr/bin/chromium-browser', '/usr/bin/chromium', '/usr/bin/brave-browser'],
+    win32: [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    ],
+  };
+  const list = candidates[process.platform] || [];
+  return list.find((p) => fs.existsSync(p)) || null;
+}
 
 function getCommitHash() {
   try {
@@ -18,14 +35,18 @@ function runAudit(url) {
   console.log(`Running Lighthouse audit on ${url} ...`);
   const outPath = path.join(os.tmpdir(), `wpd-lh-${Date.now()}.json`);
 
+  const chromePath = findChrome();
+  const env = { ...process.env };
+  if (chromePath) env.CHROME_PATH = chromePath;
+
   try {
     execSync(
       `npx lighthouse ${url} --quiet --chrome-flags="--headless" ` +
       `--only-categories=performance --output=json --output-path=${outPath}`,
-      { stdio: 'inherit', env: { ...process.env, CHROME_PATH: chromePath } }
+      { stdio: 'inherit', env }
     );
   } catch (err) {
-    console.error('Lighthouse failed. Is Chrome installed and the app running?');
+    console.error('Lighthouse failed. Is a Chromium browser installed and the app running?');
     return;
   }
 

@@ -1,12 +1,23 @@
 {
-  "name": "wpd-cli",
+  "name": "@your-npm-username/webscout",
   "version": "1.0.0",
+  "description": "Terminal performance & error regression detector. Wraps any local app, logs API + browser metrics, runs Lighthouse, flags regressions with commit-blame.",
   "bin": {
     "wpd": "./bin/wpd.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "assets/"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "commander": "^12.1.0",
     "http-proxy": "^1.18.1",
     "lighthouse": "^12.2.1"
-  }
+  },
+  "keywords": ["performance", "monitoring", "regression", "lighthouse", "web-vitals", "cli"],
+  "license": "MIT"
 }

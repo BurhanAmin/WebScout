@@ -3,7 +3,7 @@ const path = require('path');
 
 // Read the RUM script once when WPD starts
 const rumScript = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'rum-script', 'rum.js'),
+  path.join(__dirname, '..', 'assets', 'rum.js'),
   'utf8'
 );
 

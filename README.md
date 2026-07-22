@@ -1,261 +1,433 @@
-# WebScout
+<div align="center">
 
-> Zero-configuration observability for web applications.
+# 🚀 WebScout
 
-WebScout is a developer tool that sits in front of your application as a reverse proxy, automatically capturing request metrics, browser errors, performance data, and regressions—without requiring any changes to your application's source code.
+### Terminal-first Web Performance & Regression Detection
 
-Instead of installing SDKs or adding middleware, simply run your application through WebScout and start monitoring immediately.
+*Monitor performance. Detect regressions. Blame the commit.*
 
----
+![Node.js](https://img.shields.io/badge/Node.js-24+-339933?logo=node.js&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-Built--in-blue?logo=sqlite)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Platform](https://img.shields.io/badge/macOS-Linux-Windows-orange)
 
-## Features
-
-* **Zero Code Changes** – No middleware, SDKs, or application modifications required.
-* **Automatic Request Monitoring** – Capture HTTP methods, routes, status codes, response times, and request durations.
-* **Browser Error Tracking** – Automatically injects a lightweight client-side interceptor into HTML responses to capture JavaScript, Fetch, and XHR errors.
-* **Local Metrics Database** – Stores all metrics in a local SQLite database inside a `.webscout/` folder.
-* **Regression Detection** – Detects endpoints whose performance has degraded over time.
-* **Git Commit Blame** – Identifies commits that may have introduced regressions using the project's Git history.
-* **Lighthouse Audits** – Run Lighthouse audits directly from the CLI.
-* **Live Terminal Dashboard** – Monitor requests, latency, and errors in real time from your terminal.
+</div>
 
 ---
 
-# How It Works
+## ✨ Overview
 
-Normally, your application runs like this:
+WebScout wraps your application the same way **Git wraps your repository**.
 
-```text
-Browser
-    │
-    ▼
-Your App
-```
+Instead of modifying your codebase, simply run your application **through WebScout**.
 
-With WebScout:
+It automatically:
 
-```text
-Browser
-    │
-    ▼
-WebScout Proxy
-    │
-    ▼
-Your App
-```
+- 📊 Records every API request
+- ⚡ Measures real browser performance
+- 🔍 Runs Lighthouse audits
+- 📈 Detects regressions across commits
+- 🧠 Identifies the commit most likely responsible
 
-Every request passes through WebScout before reaching your application.
+No SDKs.
+No code changes.
+No external database.
 
-This allows WebScout to automatically:
-
-* Measure request latency
-* Record HTTP status codes
-* Capture request timings
-* Detect failed requests
-* Monitor browser-side errors
-* Store metrics locally
-
-Your application continues running exactly as before.
+Everything stays local.
 
 ---
 
-# Architecture
+# 🎯 Why WebScout?
+
+Most performance bugs don't fail builds.
+
+Instead they quietly ship into production.
+
+- An endpoint becomes 30% slower
+- A JavaScript bundle grows by 500KB
+- A new API starts returning errors
+- Lighthouse score slowly drops
+
+Nobody notices...
+
+...until users do.
+
+WebScout continuously records performance metrics tagged with Git commits and automatically tells you:
+
+> **"This endpoint became 42% slower after commit `9f84c1a`."**
+
+---
+
+# ✨ Features
+
+| Feature | Description |
+|----------|-------------|
+| 🔄 Reverse Proxy | Transparently sits in front of your application |
+| 📊 API Monitoring | Logs every request, status code and latency |
+| 🌐 Real User Monitoring | Injects browser script automatically |
+| 🚨 Fetch Error Detection | Captures failed fetch/XHR requests |
+| 💡 Lighthouse Integration | Stores Core Web Vitals for every audit |
+| 📈 Regression Detection | Compares latest metrics with historical baseline |
+| 🧠 Commit Blame | Shows commits responsible for regressions |
+| 💾 SQLite Storage | Everything stored locally in `.wpd/metrics.db` |
+| 🛠 Zero Instrumentation | No code changes required |
+
+---
+
+# 🏗 Architecture
 
 ```text
-                Browser
+                 Browser
                     │
                     ▼
-        ┌────────────────────┐
-        │    WebScout CLI    │
-        │ Reverse Proxy      │
-        └─────────┬──────────┘
-                  │
-      Logs Requests & Responses
-                  │
-                  ▼
-           Your Web Application
-                  │
-                  ▼
-          SQLite (.webscout/)
-                  │
-                  ▼
-        Dashboard / Reports / AI
+        ┌───────────────────────┐
+        │     WebScout Proxy    │
+        │        :5050          │
+        └──────────┬────────────┘
+                   │
+     Logs Requests │
+ Injects RUM Script│
+                   ▼
+           Your App (:4000)
+
+                   │
+                   ▼
+        .wpd/metrics.db (SQLite)
+                   ▲
+                   │
+      Browser RUM Collector
+
+      wpd audit  ───► Lighthouse
+      wpd check  ───► Regression Engine
+      wpd blame  ───► Git History
+```
+
+Every collected metric is tagged with the current Git commit hash.
+
+---
+
+# 📦 Requirements
+
+| Requirement | Version |
+|------------|---------|
+| Node.js | **24+** |
+| Git | Installed |
+| Chromium Browser | Chrome / Brave / Edge / Chromium |
+
+Lighthouse requires a Chromium browser.
+
+If WebScout cannot detect one automatically:
+
+```bash
+export CHROME_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
 ```
 
 ---
 
-# Installation
-
-Once published:
+# ⚙ Installation
 
 ```bash
-npm install -g webscout
+npm install -g @your-npm-username/webscout
 ```
 
-During development:
+Verify installation:
 
 ```bash
-npm link
+wpd --help
 ```
 
 ---
 
-# Quick Start
+# 🚀 Quick Start
 
-Run your application through WebScout.
+### 1. Start monitoring
 
 ```bash
-webscout run "npm run dev"
+wpd run "npm start"
 ```
 
-Instead of connecting directly to your application, your browser connects to the WebScout proxy.
+Visit
 
-The proxy forwards every request while collecting metrics in the background.
+```
+http://localhost:5050
+```
+
+instead of your application's port.
 
 ---
 
-# Example
+### 2. Browse normally
+
+Use your application as you normally would.
+
+WebScout automatically collects:
+
+- Request latency
+- Status codes
+- Browser timings
+- Failed fetches
+
+---
+
+### 3. View metrics
 
 ```bash
-webscout run "npm start"
+wpd stats
 ```
 
-Your application:
+Example:
+
+```
+API Metrics
+
+GET /api/users
+Average: 38ms
+
+POST /login
+Average: 112ms
+
+Browser Metrics
+
+FCP
+1.2s
+
+Load Time
+2.4s
+
+Fetch Errors
+0
+```
+
+---
+
+### 4. Run Lighthouse
+
+```bash
+wpd audit http://localhost:4000
+```
+
+Stored metrics include:
+
+- Performance Score
+- FCP
+- LCP
+- TTI
+- Page Weight
+
+---
+
+### 5. Detect regressions
+
+```bash
+wpd check
+```
+
+Example output
+
+```
+✓ Baseline established
+
+⚠ Regression detected
+
+Endpoint:
+/api/report
+
+Latency:
++198%
+
+Commit:
+9f84c1a
+```
+
+---
+
+### 6. Find the responsible commit
+
+```bash
+wpd blame
+```
+
+Example
+
+```
+Regression:
+Latency on /api/report
+
+Likely Cause
+
+Commit:
+9f84c1a
+
+Files Changed
+
+src/report.js
+src/cache.js
+```
+
+---
+
+# 🧪 Example Workflow
+
+### Baseline
+
+```bash
+wpd run "npm start"
+```
+
+Generate some traffic.
+
+---
+
+### Introduce a regression
+
+```bash
+git commit -am "Slow report endpoint"
+```
+
+---
+
+### Generate traffic again
+
+Restart WebScout.
+
+Use the endpoint again.
+
+---
+
+### Detect it
+
+```bash
+wpd check
+```
+
+Output
+
+```
+Latency regression
+
+/api/report
+
++199%
+
+Commit:
+9f84c1a
+```
+
+---
+
+### Blame it
+
+```bash
+wpd blame
+```
+
+Output
+
+```
+Likely responsible commit
+
+9f84c1a
+
+Modified files
+
+src/report.js
+```
+
+---
+
+# ⚙ Configuration
+
+Located in
+
+```
+src/regressionDetector.js
+```
+
+| Setting | Default |
+|----------|----------|
+| LATENCY_THRESHOLD | 20% |
+| WEIGHT_THRESHOLD | 20% |
+| BASELINE_WINDOW | 5 builds |
+
+---
+
+# 📁 Project Structure
 
 ```text
-localhost:3001
+wpd-cli
+│
+├── bin
+│   └── wpd.js
+│
+├── src
+│   ├── proxy.js
+│   ├── injector.js
+│   ├── db.js
+│   ├── lighthouseRunner.js
+│   ├── regressionDetector.js
+│   └── commitBlame.js
+│
+├── assets
+│   └── rum.js
+│
+└── .wpd
+    └── metrics.db
 ```
-
-WebScout Proxy:
-
-```text
-localhost:3000
-```
-
-Open your browser as usual:
-
-```text
-http://localhost:3000
-```
-
-Your application behaves exactly the same while WebScout records metrics behind the scenes.
 
 ---
 
-# Commands
+# 🗄 Database
 
-### Start Monitoring
-
-```bash
-webscout run "npm run dev"
-```
-
-Starts your application behind the WebScout reverse proxy.
-
----
-
-### Dashboard
-
-```bash
-webscout dashboard
-```
-
-Launches a live dashboard showing:
-
-* Active requests
-* Average latency
-* Error rate
-* Slow endpoints
-* Recent requests
+| Table | Purpose |
+|---------|---------|
+| `api_metrics` | Every proxied request |
+| `client_events` | Browser performance & fetch failures |
+| `build_metrics` | Lighthouse audit results |
+| `regressions` | Regression history |
 
 ---
 
-### Lighthouse Audit
+# ⚠ Limitations
 
-```bash
-webscout audit
-```
-
-Runs a Lighthouse audit against the proxied application and stores the results locally.
-
----
-
-### Regression Report
-
-```bash
-webscout regressions
-```
-
-Compares historical request metrics to identify endpoints with degraded performance.
+- Designed for **local development**
+- Proxy buffers HTML responses for RUM injection
+- Commit blame depends on how frequently metrics are collected
+- Production monitoring would require a hosted collector
 
 ---
 
-### Commit Blame
+# 🛠 Tech Stack
 
-```bash
-webscout blame
-```
-
-Uses the local Git repository to identify commits that may have introduced performance regressions or failures.
-
----
-
-# Metrics Collected
-
-## Server
-
-* HTTP Method
-* Route
-* Status Code
-* Response Time
-* Request Duration
-* Timestamp
-
-## Browser
-
-* JavaScript Errors
-* Fetch Failures
-* XHR Failures
-* Page Load Metrics
-* Navigation Timing
-
-## Performance
-
-* Average Latency
-* Error Rate
-* Slowest Endpoints
-* Request Frequency
-* Lighthouse Scores
+- Node.js 24+
+- Built-in `node:sqlite`
+- http-proxy
+- Commander.js
+- Lighthouse
+- Git
 
 ---
 
-# Local Storage
+# 🛣 Roadmap
 
-All collected data is stored locally.
-
-```text
-.webscout/
-    metrics.db
-```
-
-No external database is required.
-
-No cloud account is required.
-
-No additional setup is required.
+- [ ] GitHub Actions integration
+- [ ] HTML performance reports
+- [ ] Live terminal dashboard
+- [ ] Flamegraph generation
+- [ ] Docker support
+- [ ] Production collector
+- [ ] Slack / Discord notifications
+- [ ] Performance trend graphs
 
 ---
 
-# Why WebScout?
+# 📄 License
 
-Traditional observability platforms often require:
+MIT
 
-* Installing SDKs
-* Adding middleware
-* Modifying application code
-* Setting up databases
-* Configuring cloud services
+---
 
-WebScout removes those barriers by acting as a transparent reverse proxy.
+<div align="center">
 
-Simply run your application through WebScout and begin collecting observability data immediately.
+**WebScout makes performance regressions impossible to ignore.**
+
+</div>

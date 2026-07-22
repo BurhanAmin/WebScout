@@ -69,4 +69,30 @@ program
       found.forEach((r) => console.log(`  [${r.kind}] ${r.detail}  (commit ${r.commit_hash})`));
     }
   });
+  program
+  .command('blame')
+  .description('Show which commit likely caused each flagged regression')
+  .action(() => {
+    const { detectRegressions } = require('../src/regressionDetector');
+    const { blameAll } = require('../src/commitBlame');
+
+    detectRegressions(); // refresh flags from current data
+    const blames = blameAll();
+
+    if (blames.length === 0) {
+      console.log('No regressions to blame.');
+      return;
+    }
+
+    blames.forEach((b) => {
+      console.log(`\nRegression(s) on commit ${b.flaggedCommit}:`);
+      b.regressions.forEach((r) => console.log(`  - [${r.kind}] ${r.detail}`));
+      console.log(`\n  Likely introduced between ${b.lastGood || '(first build)'} and ${b.flaggedCommit}:`);
+      if (b.suspects) console.log(b.suspects.split('\n').map((l) => '    ' + l).join('\n'));
+      if (b.files) {
+        console.log('\n  Files changed:');
+        console.log(b.files.split('\n').map((l) => '    ' + l).join('\n'));
+      }
+    });
+  });
 program.parse();
