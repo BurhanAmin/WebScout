@@ -1,5 +1,5 @@
 {
-  "name": "@your-npm-username/webscout",
+  "name": "@burhanamin/webscout",
   "version": "1.0.0",
   "description": "Terminal performance & error regression detector. Wraps any local app, logs API + browser metrics, runs Lighthouse, flags regressions with commit-blame.",
   "bin": {
@@ -19,5 +19,14 @@
     "lighthouse": "^12.2.1"
   },
   "keywords": ["performance", "monitoring", "regression", "lighthouse", "web-vitals", "cli"],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BurhanAmin/WebScout.git",
+    "directory": "wpd-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/BurhanAmin/WebScout/issues"
+  },
+  "homepage": "https://github.com/BurhanAmin/WebScout#readme"
 }
