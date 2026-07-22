@@ -103,10 +103,68 @@ function logBuildMetric(b) {
 function getRecentBuildMetrics() {
   return recentBuildStmt.all();
 }
+// --- Regression detection: a table to store flagged regressions ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS regressions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT,
+    target TEXT,
+    baseline REAL,
+    latest REAL,
+    change_pct REAL,
+    detail TEXT,
+    commit_hash TEXT,
+    detected_at TEXT
+  )
+`);
 
+// Distinct commits, oldest -> newest, for each data source
+const apiCommitsStmt = db.prepare(`
+  SELECT commit_hash, MAX(timestamp) AS last_seen
+  FROM api_metrics GROUP BY commit_hash ORDER BY last_seen ASC
+`);
+const buildCommitsStmt = db.prepare(`
+  SELECT commit_hash, MAX(timestamp) AS last_seen
+  FROM build_metrics GROUP BY commit_hash ORDER BY last_seen ASC
+`);
+
+// Per-endpoint stats for one commit: avg latency, request count, error count
+const apiEndpointStatsStmt = db.prepare(`
+  SELECT path,
+         AVG(duration_ms) AS avg_ms,
+         COUNT(*)         AS total,
+         SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) AS errors
+  FROM api_metrics WHERE commit_hash = ? GROUP BY path
+`);
+
+// Lighthouse averages for one commit
+const buildStatsStmt = db.prepare(`
+  SELECT AVG(fcp) AS fcp, AVG(lcp) AS lcp, AVG(tti) AS tti, AVG(total_bytes) AS total_bytes
+  FROM build_metrics WHERE commit_hash = ?
+`);
+
+// Regression storage
+const insertRegressionStmt = db.prepare(`
+  INSERT INTO regressions (kind, target, baseline, latest, change_pct, detail, commit_hash, detected_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
+const getRegressionsStmt = db.prepare(`SELECT * FROM regressions ORDER BY id DESC LIMIT 50`);
+const clearRegressionsStmt = db.prepare(`DELETE FROM regressions`);
+
+function getApiCommits() { return apiCommitsStmt.all(); }
+function getBuildCommits() { return buildCommitsStmt.all(); }
+function getApiEndpointStats(commit) { return apiEndpointStatsStmt.all(commit); }
+function getBuildStats(commit) { return buildStatsStmt.get(commit); }
+function insertRegression(r) {
+  insertRegressionStmt.run(r.kind, r.target, r.baseline, r.latest, r.change_pct ?? null, r.detail, r.commit_hash, r.detected_at);
+}
+function getRegressions() { return getRegressionsStmt.all(); }
+function clearRegressions() { clearRegressionsStmt.run(); }
 // --- Exports (must be last, after everything is defined) ---
 module.exports = {
   logMetric, getRecentMetrics,
   logClientEvent, getRecentClientEvents,
   logBuildMetric, getRecentBuildMetrics,
+  getApiCommits, getBuildCommits, getApiEndpointStats, getBuildStats,
+  insertRegression, getRegressions, clearRegressions,
 };

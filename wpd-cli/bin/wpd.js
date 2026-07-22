@@ -56,5 +56,17 @@ program
     const { runAudit } = require('../src/lighthouseRunner');
     runAudit(url || 'http://localhost:4000/');
   });
-
+program
+  .command('check')
+  .description('Detect regressions vs. the rolling baseline')
+  .action(() => {
+    const { detectRegressions } = require('../src/regressionDetector');
+    const found = detectRegressions();
+    if (found.length === 0) {
+      console.log('No regressions detected.');
+    } else {
+      console.log(`${found.length} regression(s) detected:\n`);
+      found.forEach((r) => console.log(`  [${r.kind}] ${r.detail}  (commit ${r.commit_hash})`));
+    }
+  });
 program.parse();
