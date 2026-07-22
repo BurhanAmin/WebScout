@@ -19,7 +19,7 @@ app.get('/api/products', (req, res) => {
   ]);
 });
 
-const SLOW_DELAY_MS = 300;
+const SLOW_DELAY_MS = 900;
 
 app.get('/api/report', (req, res) => {
   setTimeout(() => {
